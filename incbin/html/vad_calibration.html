@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AIｽﾀｯｸﾁｬﾝ ﾐﾆﾏﾙ - VAD音声設定</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .section {
+        margin: 24px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+      }
+
+      .section h2 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      .status-display {
+        background-color: #e8f5e8;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 15px 0;
+        font-family: monospace;
+        white-space: pre-wrap;
+        border-left: 4px solid #4CAF50;
+      }
+
+      .info {
+        background-color: #d1ecf1;
+        border-left: 4px solid #17a2b8;
+        color: #0c5460;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+      }
+
+      .warning {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        color: #856404;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+      }
+
+      .result-box {
+        background-color: #f3f3f3;
+        padding: 12px;
+        border-radius: 4px;
+        margin-top: 12px;
+        white-space: pre-wrap;
+        border-left: 4px solid #999;
+      }
+
+      .threshold-value {
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        margin: 10px 0 14px;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        margin: 10px 0 16px;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 10px;
+      }
+
+      button {
+        padding: 12px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 15px;
+        min-width: 160px;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      .secondary-btn {
+        background-color: #607D8B;
+      }
+
+      .secondary-btn:hover {
+        background-color: #546E7A;
+      }
+
+      .calibration-btn {
+        background-color: #2196F3;
+      }
+
+      .calibration-btn:hover {
+        background-color: #1976D2;
+      }
+
+      .test-btn {
+        background-color: #FF9800;
+      }
+
+      .test-btn:hover {
+        background-color: #F57C00;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 18px;
+        background-color: #ddd;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 12px 0;
+        display: none;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background-color: #4CAF50;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>VAD音声設定</h1>
+
+    <!-- 現在状態 -->
+    <div class="section">
+      <h2>現在の設定状況</h2>
+      <div class="status-display" id="status-display">設定情報を読み込み中...</div>
+      <div class="button-row">
+        <button type="button" class="secondary-btn" onclick="loadStatus()">最新状態を取得</button>
+      </div>
+    </div>
+
+    <!-- 閾値調整 -->
+    <div class="section">
+      <h2>音声検出閾値</h2>
+      <div class="info">
+        数値が低いほど小さな声を拾いやすくなります。<br>
+        数値が高いほど雑音で誤検出しにくくなります。<br>
+        通常は <strong>180</strong> を基準に、必要な時だけ調整してください。
+      </div>
+
+      <div class="threshold-value">
+        現在値: <span id="threshold-value">---</span>
+      </div>
+
+      <input
+        type="range"
+        id="threshold-slider"
+        min="100"
+        max="300"
+        step="10"
+        value="180"
+        oninput="updateThresholdLabel(this.value)"
+      >
+
+      <div class="button-row">
+        <button type="button" onclick="saveThreshold()">閾値を保存</button>
+        <button type="button" class="secondary-btn" onclick="resetThreshold()">標準値に戻す（180）</button>
+      </div>
+    </div>
+
+    <!-- キャリブレーション -->
+    <div class="section">
+      <h2>環境キャリブレーション</h2>
+      <div class="warning">
+        キャリブレーション中（約3秒間）は話さず、周囲の環境音だけを測定してください。<br>
+        実行すると、測定結果に応じて閾値が更新されます。
+      </div>
+
+      <div class="progress-bar" id="calibration-progress">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="calibration-btn" onclick="startCalibration()">キャリブレーション実行</button>
+      </div>
+    </div>
+
+    <!-- テスト録音 -->
+    <div class="section">
+      <h2>テスト録音</h2>
+      <div class="info">
+        現在の設定で実際に録音・音声認識を行います。<br>
+        結果テキストが下に表示されます。
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="test-btn" onclick="testRecording()">VAD録音テスト</button>
+      </div>
+
+      <div class="result-box" id="test-result">まだ実行していません。</div>
+    </div>
+
+    <div class="button-row">
+      <button type="button" class="secondary-btn" onclick="history.back()">戻る</button>
+    </div>
+
+    <script>
+      function updateThresholdLabel(val) {
+        document.getElementById("threshold-value").textContent = val;
+      }
+
+      function parseThresholdFromStatus(text) {
+        const match = text.match(/音声検出閾値:\s*([0-9.]+)/);
+        if (!match) return null;
+        return parseInt(match[1], 10);
+      }
+
+      function loadStatus() {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "/vad_status");
+        xhr.onload = function () {
+          const statusBox = document.getElementById("status-display");
+          if (xhr.status === 200) {
+            statusBox.textContent = xhr.responseText;
+
+            const th = parseThresholdFromStatus(xhr.responseText);
+            if (th !== null && !Number.isNaN(th)) {
+              document.getElementById("threshold-slider").value = th;
+              updateThresholdLabel(th);
+            }
+          } else {
+            statusBox.textContent = "状態取得に失敗しました";
+          }
+        };
+        xhr.onerror = function () {
+          document.getElementById("status-display").textContent = "状態取得に失敗しました";
+        };
+        xhr.send();
+      }
+
+      function saveThreshold() {
+        const val = document.getElementById("threshold-slider").value;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/vad_set_threshold");
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            alert("閾値を保存しました。");
+            loadStatus();
+          } else {
+            alert("保存に失敗しました。");
+          }
+        };
+
+        xhr.onerror = function () {
+          alert("保存に失敗しました。");
+        };
+
+        xhr.send("threshold=" + encodeURIComponent(val));
+      }
+
+      function resetThreshold() {
+        document.getElementById("threshold-slider").value = 180;
+        updateThresholdLabel(180);
+      }
+
+      function startCalibration() {
+        if (!confirm("キャリブレーションを開始します。約3秒間は話さず、静かにしてください。よろしいですか？")) {
+          return;
+        }
+
+        const progressBar = document.getElementById("calibration-progress");
+        const progressFill = document.getElementById("progress-fill");
+
+        progressBar.style.display = "block";
+        progressFill.style.width = "0%";
+
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress += 33.33;
+          progressFill.style.width = Math.min(progress, 100) + "%";
+          if (progress >= 100) {
+            clearInterval(progressInterval);
+          }
+        }, 1000);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/vad_calibration_exec");
+        xhr.onload = function () {
+          clearInterval(progressInterval);
+          progressBar.style.display = "none";
+
+          if (xhr.status === 200) {
+            alert("キャリブレーションが完了しました。");
+            loadStatus();
+          } else {
+            alert("キャリブレーションに失敗しました。");
+          }
+        };
+
+        xhr.onerror = function () {
+          clearInterval(progressInterval);
+          progressBar.style.display = "none";
+          alert("キャリブレーションに失敗しました。");
+        };
+
+        xhr.send();
+      }
+
+      function testRecording() {
+        const resultBox = document.getElementById("test-result");
+        resultBox.textContent = "録音テストを実行中です...";
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/vad_test_recording");
+
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            resultBox.textContent = xhr.responseText;
+          } else {
+            resultBox.textContent = "テストに失敗しました: " + xhr.responseText;
+          }
+        };
+
+        xhr.onerror = function () {
+          resultBox.textContent = "テストに失敗しました。";
+        };
+
+        xhr.send();
+      }
+
+      window.onload = function () {
+        loadStatus();
+      };
+    </script>
+  </body>
+</html>

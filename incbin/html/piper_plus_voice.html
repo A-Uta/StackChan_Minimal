@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AIｽﾀｯｸﾁｬﾝ ﾐﾆﾏﾙ - キャラクタ設定</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .section {
+        margin: 24px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+      }
+      .section h2 {
+        margin-top: 0;
+        color: #333;
+      }
+      label {
+        display: block;
+        margin: 12px 0 8px;
+        font-weight: bold;
+      }
+      select, input[type="range"] {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+      .value {
+        font-family: monospace;
+        margin-bottom: 8px;
+      }
+      .info {
+        background-color: #d1ecf1;
+        border-left: 4px solid #17a2b8;
+        color: #0c5460;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+      }
+      .credit {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        color: #856404;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+      }
+      .rotation-options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+        gap: 10px 16px;
+        margin-top: 12px;
+      }
+      .rotation-options label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background-color: #fff;
+        font-weight: normal;
+        cursor: pointer;
+      }
+      .rotation-options input[type="radio"] {
+        width: auto;
+        margin: 0;
+      }
+      button {
+        display: block;
+        margin: 20px auto;
+        padding: 12px 24px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        min-width: 180px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .secondary {
+        background-color: #607d8b;
+      }
+      .secondary:hover {
+        background-color: #546e7a;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Piper-plus音声設定</h1>
+
+    <div class="section">
+      <h2>画面の向き</h2>
+      <div class="info">
+        M5.Display.setRotation() に渡す値です。保存すると、その場で画面の向きに反映されます。
+      </div>
+      <div class="rotation-options" id="rotation-group">
+        <label><input type="radio" name="display_rotation" value="0"> setRotation(0)</label>
+        <label><input type="radio" name="display_rotation" value="1"> setRotation(1)</label>
+        <label><input type="radio" name="display_rotation" value="2"> setRotation(2)</label>
+        <label><input type="radio" name="display_rotation" value="3"> setRotation(3)</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>言語 / キャラクター</h2>
+      <div class="info">
+        ここで選んだ言語設定は、Piper の language 指定と会話表示の両方に反映されます。
+      </div>
+      <label for="character">言語 / キャラクター</label>
+      <select id="character">
+        <optgroup label="日本語">
+          <option value="ja-01">つくよみちゃん-日本語</option>
+        </optgroup>
+        <optgroup label="English">
+          <option value="en-01">つくよみちゃん-English</option>
+        </optgroup>
+        <optgroup label="中文">
+          <option value="zh-01">つくよみちゃん-中文</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="section">
+      <h2>音量</h2>
+      <label for="voice_volume">会話音量</label>
+      <input type="range" id="voice_volume" min="0" max="255" step="1" value="50">
+      <div class="value">現在値: <span id="voice_volume_value">50</span></div>
+    </div>
+
+    <div class="section">
+      <h2>話速</h2>
+      <label for="piper_tts_length_scale">Piper length_scale</label>
+      <input type="range" id="piper_tts_length_scale" min="0.50" max="2.00" step="0.05" value="1.00">
+      <div class="value">現在値: <span id="piper_tts_length_scale_value">1.00</span></div>
+      <div class="info">
+        0.50 に近いほど速く、2.00 に近いほどゆっくり話します。
+      </div>
+    </div>
+
+    <div class="credit">
+      <strong>外部TTSクレジット</strong><br>
+      この音声設定は、外部TTS環境で生成した音声の再生設定です。<br>
+      Stack-chan Minimal 本体には音声モデルは含まれていません。<br>
+      <br>
+      TTSエンジン:<br>
+      - piper-plus by ayutaz (MIT License)<br>
+      <br>
+      音声モデル:<br>
+      - 音声合成には、フリー素材キャラクター「つくよみちゃん」が無料公開している音声データを使用しています。<br>
+      - <a href="https://tyc.rei-yumesaki.net/" target="_blank" rel="noopener noreferrer">■つくよみちゃんコーパス（CV.夢前黎）</a>
+      - <a href="https://huggingface.co/ayousanz/piper-plus-tsukuyomi-chan" target="_blank" rel="noopener noreferrer">ayousanz/piper-plus-tsukuyomi-chan</a><br>
+    </div>
+
+    <button type="button" onclick="saveSettings()">設定を保存</button>
+    <button type="button" class="secondary" onclick="history.back()">戻る</button>
+
+    <script>
+      const voiceVolume = document.getElementById('voice_volume');
+      const voiceVolumeValue = document.getElementById('voice_volume_value');
+      const lengthScale = document.getElementById('piper_tts_length_scale');
+      const lengthScaleValue = document.getElementById('piper_tts_length_scale_value');
+      const character = document.getElementById('character');
+
+      function updateLabels() {
+        voiceVolumeValue.textContent = voiceVolume.value;
+        lengthScaleValue.textContent = Number(lengthScale.value).toFixed(2);
+      }
+
+      voiceVolume.addEventListener('input', updateLabels);
+      lengthScale.addEventListener('input', updateLabels);
+
+      function setRotationRadio(value) {
+        const radio = document.querySelector(
+          `input[name="display_rotation"][value="${value}"]`
+        );
+        if (radio) {
+          radio.checked = true;
+        }
+      }
+
+      function getSelectedRotation() {
+        const checked = document.querySelector('input[name="display_rotation"]:checked');
+        return checked ? checked.value : '0';
+      }
+
+      function loadSettings() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', '/piper_plus_voice_get');
+        xhr.onload = function() {
+          if (xhr.status !== 200) return;
+          try {
+            const data = JSON.parse(xhr.responseText);
+
+            if (typeof data.display_rotation !== 'undefined') {
+              setRotationRadio(String(data.display_rotation));
+            } else {
+              setRotationRadio('0');
+            }
+
+            if (typeof data.voice_volume !== 'undefined') {
+              voiceVolume.value = data.voice_volume;
+            }
+            if (typeof data.piper_tts_length_scale !== 'undefined') {
+              lengthScale.value = Number(data.piper_tts_length_scale).toFixed(2);
+            }
+            if (typeof data.character !== 'undefined' && data.character) {
+              character.value = data.character;
+            }
+            updateLabels();
+          } catch (e) {
+            console.error(e);
+          }
+        };
+        xhr.send();
+      }
+
+      function saveSettings() {
+        const formData = new FormData();
+        formData.append('display_rotation', getSelectedRotation());
+        formData.append('voice_volume', voiceVolume.value);
+        formData.append('piper_tts_length_scale', Number(lengthScale.value).toFixed(2));
+        formData.append('character', character.value);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/piper_plus_voice_set');
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            alert('設定を送信しました！');
+          } else {
+            alert('設定の送信に失敗しました。');
+          }
+        };
+        xhr.send(formData);
+      }
+
+      window.onload = loadSettings;
+    </script>
+  </body>
+</html>

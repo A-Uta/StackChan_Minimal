@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AIｽﾀｯｸﾁｬﾝ ﾐﾆﾏﾙ - Wi-Fi設定</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1, h2 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      p {
+        line-height: 1.6;
+      }
+
+      #networks ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      #networks li {
+        margin: 5px 0;
+      }
+
+      #networks button {
+        width: 100%;
+        padding: 10px 15px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        background-color: #f5f5f5;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      #networks button:hover {
+        background-color: #e0e0e0;
+      }
+
+      label {
+        display: block;
+        margin: 10px 0 5px;
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 8px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+
+      button[type="submit"] {
+        margin-top: 20px;
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button[type="submit"]:hover {
+        background-color: #45a049;
+      }
+
+      .back-button {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 10px 15px;
+        background-color: #666;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+
+      .back-button:hover {
+        background-color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Wi-Fi設定</h1>
+    <p>
+      1. まずスマホ/PCから、Stack-chan CuccioloのWi-Fi(AP)に接続してください。<br>
+      2. 下の「Wi-Fi一覧」をタップしてSSIDを選択し、パスワードを入力して保存します。
+    </p>
+
+    <h2>Wi-Fi一覧</h2>
+    <div id="networks">スキャン中...</div>
+
+    <h2>接続先の設定</h2>
+    <form id="wifi-form" onsubmit="submitWifi(event)">
+      <label>SSID</label>
+      <input type="text" id="ssid" name="ssid" value="{{CURRENT_SSID}}" required>
+
+      <label>パスワード</label>
+      <input type="password" id="password" name="password" placeholder="必要に応じて入力">
+
+      <button type="submit">保存して再起動</button>
+      <a href="/" class="back-button">メニューに戻る</a>
+    </form>
+
+    <script>
+      function loadNetworks() {
+        var container = document.getElementById('networks');
+        container.innerHTML = "スキャン中...";
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/wifi_scan");
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            try {
+              var list = JSON.parse(xhr.responseText);
+              if (!list.length) {
+                container.innerHTML = "<p>Wi-Fiアクセスポイントが見つかりませんでした。</p>";
+                return;
+              }
+              var html = "<ul>";
+              list.forEach(function(ap) {
+                var label = ap.ssid + " (" + ap.rssi + "dBm)";
+                if (ap.open) {
+                  label += " [OPEN]";
+                }
+                html += "<li><button type='button' onclick=\"selectSSID('" +
+                        ap.ssid.replace(/'/g, "\\'") + "')\">" +
+                        label + "</button></li>";
+              });
+              html += "</ul>";
+              container.innerHTML = html;
+            } catch(e) {
+              container.innerHTML = "<p>スキャン結果の解析に失敗しました。</p>";
+            }
+          } else {
+            container.innerHTML = "<p>スキャンに失敗しました (" + xhr.status + ")</p>";
+          }
+        };
+        xhr.onerror = function() {
+          container.innerHTML = "<p>スキャンに失敗しました(通信エラー)。</p>";
+        };
+        xhr.send();
+      }
+
+      function selectSSID(ssid) {
+        document.getElementById('ssid').value = ssid;
+      }
+
+      function submitWifi(event) {
+        event.preventDefault();
+        var ssid = document.getElementById('ssid').value;
+        if (!ssid) {
+          alert("SSIDを入力してください。");
+          return;
+        }
+        var form = document.getElementById('wifi-form');
+        var formData = new FormData(form);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/wifi_save");
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            alert(xhr.responseText || "設定を保存しました。デバイスが再起動します。");
+          } else {
+            alert("設定の送信に失敗しました。(" + xhr.status + ")");
+          }
+        };
+        xhr.onerror = function() {
+          alert("通信エラーが発生しました。");
+        };
+        xhr.send(formData);
+      }
+
+      window.onload = loadNetworks;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>言語/キャラクター音声の設定</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      textarea {
+        width: 80%;
+        height: 200px;
+        resize: both;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>言語/キャラクター音声の設定</h1>
+    <form>
+      <select id="character" onchange="sendData()">
+        <optgroup label="日本語">
+          <option value="ja-03">ずんだもん</option>
+          <option value="ja-02">四国めたん</option>
+          <option value="ja-13">青山龍星</option>
+          <option value="ja-23">WhiteCUL</option>
+        </optgroup>
+        <optgroup label="English">
+          <option value="en-01">Normal</option>
+        </optgroup>
+        <optgroup label="中文">
+          <option value="zh-01">Normal</option>
+        </optgroup>
+      </select></br>
+      <button type="button" onclick="history.back()">戻る</button></br></br>
+      <li><a href='https://voicevox.hiroshiba.jp/'>VOICEVOX</a>のキャラクター音声を利用しています</li>
+      <li><label for="role1">クレジット表記 - VOICEVOX:ずんだもん,VOICEVOX:四国めたん,VOICEVOX:青山龍星,VOICEVOX:WhiteCUL</label></li>
+    </form>
+    <script>
+      function sendData() {
+        // FormDataオブジェクトを作成
+        const formData = new FormData();
+
+        // 各ロールの値をFormDataオブジェクトに追加
+        const characterValue = document.getElementById("character").value;
+        if (characterValue !== "") {
+          formData.append("character", characterValue);
+        }
+
+	    // POSTリクエストを送信
+	    const xhr = new XMLHttpRequest();
+	    xhr.open("POST", "/character_voice_set");
+	    xhr.onload = function() {
+	      if (xhr.status === 200) {
+	        alert("設定を送信しました！");
+	      } else {
+	        alert("設定の送信に失敗しました。");
+	      }
+	    };
+	    xhr.send(formData);
+	  }
+	</script>
+  </body>
+</html>

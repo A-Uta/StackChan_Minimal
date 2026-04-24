@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AIｽﾀｯｸﾁｬﾝ ﾐﾆﾏﾙ - 対話型AIモデルの設定</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+      h1 { text-align: center; margin-bottom: 30px; }
+      button { display: block; margin: 10px auto; padding: 10px 20px; background-color: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+      button:hover { background-color: #45a049; }
+      button.back-btn { background-color: #888; }
+      button.back-btn:hover { background-color: #666; }
+      input[type="text"], select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
+      input[type="text"]:focus, select:focus { outline: none; border-color: #4caf50; }
+      label { display: block; margin: 10px 0 5px 0; font-weight: bold; color: #333; }
+      .status { text-align:center; font-size:13px; color:#333; margin-bottom:10px; white-space:pre-wrap; word-break:break-word; }
+    </style>
+  </head>
+  <body>
+    <h1>対話型AIモデルの設定</h1>
+
+    <form>
+      <select id="model_ver" name="model version">
+        <optgroup label="Local LLM">
+          <option value="">最後に選択してください</option>
+          <option value="1">llamacpp-LLM (llama-server)</option>
+          <option value="2">LMStudio/FLM-LLM</option>
+          <option value="3">ollama-LLM</option>
+        </optgroup>
+      </select>
+      <label for="model_ver">LLM-実行環境</label><br />
+
+      <input type="text" id="llm_server_ip" name="llm server ip" placeholder="例: 192.168.0.2" />
+      <label for="llm_server_ip">Local LLM-サーバIP</label><br />
+
+      <input type="text" id="llm_server_port" name="llm server port" placeholder="例: 11434（未入力=デフォルト）" />
+      <label for="llm_server_port">Local LLM-ポート（任意）</label>
+      <label style="font-weight:normal; margin-top:4px;">
+        <input type="checkbox" id="reset_port" />
+        ポートをデフォルトに戻す（ollama:11434 / LMStudio:52626 / llama.cpp:8080）
+      </label><br />
+
+      <input type="text" id="openai_api_key" name="openai api key" placeholder="例: sk-..." />
+      <label for="openai_api_key">OpenAI APIキー（OpenAI互換 / llama.cpp Bearer用）</label><br />
+
+      <select id="llm_model_name" name="llm server name">
+        <option value="">（モデル一覧取得で自動表示）</option>
+      </select>
+      <label for="llm_model_name">Local LLM-モデル名</label><br />
+
+      <button type="button" id="fetch_models_btn">モデル一覧を取得</button>
+      <div id="models_status" class="status"></div>
+
+      <input type="text" id="next_speach_ip" name="next speach ip" placeholder="例: 192.168.0.3" />
+      <label for="next_speach_ip">おしゃべり転送IP</label><br />
+
+      <hr />
+
+      <h2>音声認識（Whisper.cpp）サーバ設定</h2>
+
+      <input type="text" id="whisper_server_ip" placeholder="例: 192.168.0.10" />
+      <label for="whisper_server_ip">Whisper.cpp サーバIP</label><br />
+
+      <input type="text" id="whisper_server_port" placeholder="例: 8081" />
+      <label for="whisper_server_port">Whisper.cpp サーバPort</label><br />
+
+      <h2>音声合成（Piper-plus）サーバ設定</h2>
+
+      <input type="text" id="piper_tts_ip" placeholder="例: 192.168.0.11" />
+      <label for="piper_tts_ip">Piper-plus サーバIP</label><br />
+
+      <input type="text" id="piper_tts_port" placeholder="例: 5000" />
+      <label for="piper_tts_port">Piper-plus サーバPort</label><br />
+
+      <button type="button" onclick="sendData()">保存</button>
+      <button type="button" class="back-btn" onclick="history.back()">戻る</button>
+    </form>
+
+    <script>
+      async function loadCurrent() {
+        try {
+          const res = await fetch("/model_ver_get");
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.model_ver) document.getElementById("model_ver").value = data.model_ver;
+          if (data.llm_server_ip) document.getElementById("llm_server_ip").value = data.llm_server_ip;
+          if (data.llm_model_name) document.getElementById("llm_model_name").value = data.llm_model_name;
+          if (data.openai_api_key !== undefined) document.getElementById("openai_api_key").value = data.openai_api_key;
+          if (data.next_speach_ip) document.getElementById("next_speach_ip").value = data.next_speach_ip;
+          if (data.llm_server_port !== undefined && data.llm_server_port !== 0) {
+            document.getElementById("llm_server_port").value = data.llm_server_port;
+          } else {
+            document.getElementById("llm_server_port").value = "";
+          }
+
+          // ★追加: Whisper
+          if (data.whisper_server_ip)
+            document.getElementById("whisper_server_ip").value = data.whisper_server_ip;
+          if (data.whisper_server_port !== undefined && data.whisper_server_port !== 0)
+            document.getElementById("whisper_server_port").value = data.whisper_server_port;
+          else
+            document.getElementById("whisper_server_port").value = "";
+
+          // ★追加: Piper
+          if (data.piper_tts_ip)
+            document.getElementById("piper_tts_ip").value = data.piper_tts_ip;
+          if (data.piper_tts_port !== undefined && data.piper_tts_port !== 0)
+            document.getElementById("piper_tts_port").value = data.piper_tts_port;
+          else
+            document.getElementById("piper_tts_port").value = "";
+        } catch (e) {
+          console.log("設定読み込みエラー:", e);
+        }
+      }
+
+      function defaultPortByEnv(env) {
+        if (env === "1") return 8080;   // llama.cpp
+        if (env === "2") return 52626;  // LMStudio
+        if (env === "3") return 11434;  // ollama
+        return 8080;
+      }
+
+      function buildModelsQuery() {
+        const env = (document.getElementById("model_ver")?.value || "").trim();
+        const ip  = (document.getElementById("llm_server_ip")?.value || "").trim();
+
+        let port = 0; // 0=未設定（ESP32側でデフォルト解釈）
+        const resetPort = document.getElementById("reset_port")?.checked || false;
+        const portText  = (document.getElementById("llm_server_port")?.value || "").trim();
+        if (!resetPort && portText !== "") {
+          const p = parseInt(portText, 10);
+          port = isNaN(p) ? 0 : p;
+        }
+
+        const qs = new URLSearchParams();
+        if (env) qs.set("model_ver", env);
+        if (ip)  qs.set("llm_server_ip", ip);
+        qs.set("llm_server_port", String(port));
+        return qs.toString();
+      }
+
+      function expectedModelsUrl() {
+        const env = (document.getElementById("model_ver")?.value || "").trim();
+        const ip  = (document.getElementById("llm_server_ip")?.value || "").trim();
+        const resetPort = document.getElementById("reset_port")?.checked || false;
+        const portText  = (document.getElementById("llm_server_port")?.value || "").trim();
+        const port = (resetPort || portText === "") ? defaultPortByEnv(env) : parseInt(portText, 10);
+        const path = (env === "3") ? "/api/tags" : "/v1/models";
+        if (!ip) return "(LLMサーバIP未設定)";
+        return "http://" + ip + ":" + port + path;
+      }
+
+      async function fetchModelList() {
+        const status = document.getElementById("models_status");
+        const btn = document.getElementById("fetch_models_btn");
+        const expected = expectedModelsUrl();
+
+        try {
+          if (btn) btn.disabled = true;
+          if (status) status.textContent = "モデル一覧取得中...\n" + expected;
+
+          const res = await fetch("/llm_models_get?" + buildModelsQuery());
+          const text = await res.text(); // JSONパース失敗も表示できるようにする
+
+          if (!res.ok) {
+            if (status) status.textContent = "モデル一覧の取得に失敗しました\n" + expected + "\nHTTP " + res.status + "\n" + text;
+            return;
+          }
+
+          let data = null;
+          try {
+            data = JSON.parse(text);
+          } catch (e) {
+            if (status) status.textContent = "JSON解析エラー\n" + expected + "\n" + text;
+            return;
+          }
+
+          const used = data.used_url || "(used_urlなし)";
+          const models = data.models || [];
+          if (!Array.isArray(models) || models.length === 0) {
+            if (status) status.textContent = "モデルが見つかりませんでした\nused: " + used;
+            return;
+          }
+
+          const sel = document.getElementById("llm_model_name");
+          const current = sel ? sel.value : "";
+          if (sel) {
+            sel.innerHTML = "";
+            for (const m of models) {
+              const opt = document.createElement("option");
+              opt.value = m;
+              opt.textContent = m;
+              sel.appendChild(opt);
+            }
+            if (models.includes(current)) sel.value = current;
+          }
+
+          if (status) status.textContent = "モデル一覧を更新しました (" + models.length + "件)\nused: " + used;
+        } catch (e) {
+          console.log("モデル一覧取得エラー:", e);
+          const status = document.getElementById("models_status");
+          if (status) status.textContent = "モデル一覧取得エラー\n" + expectedModelsUrl() + "\n" + String(e);
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      function sendData() {
+        const formData = new FormData();
+
+        const model_verValue = document.getElementById("model_ver").value;
+        if (model_verValue !== "") formData.append("model_ver", model_verValue);
+
+        const llm_server_ip_Value = document.getElementById("llm_server_ip").value.trim();
+        if (llm_server_ip_Value !== "") formData.append("llm_server_ip", llm_server_ip_Value);
+
+        const llm_model_name_Value = document.getElementById("llm_model_name").value;
+        if (llm_model_name_Value !== "") formData.append("llm_model_name", llm_model_name_Value);
+
+        // ★追加: OpenAI APIキー
+        const openaiApiKeyValue = document.getElementById("openai_api_key").value.trim();
+        if (openaiApiKeyValue !== "") formData.append("openai_api_key", openaiApiKeyValue);        
+
+        const next_speach_ip_Value = document.getElementById("next_speach_ip").value.trim();
+        // 空でも送る。ESP32側で「空文字なら削除」と解釈させる
+        formData.append("next_speach_ip", next_speach_ip_Value);
+
+        const resetPort = document.getElementById("reset_port").checked;
+        const llm_server_port_Value = document.getElementById("llm_server_port").value.trim();
+        if (resetPort) {
+          formData.append("llm_server_port", "0");
+        } else if (llm_server_port_Value !== "") {
+          formData.append("llm_server_port", llm_server_port_Value);
+        }
+
+        // ★追加: Whisper
+        const whisperIp = document.getElementById("whisper_server_ip").value.trim();
+        if (whisperIp !== "") formData.append("whisper_server_ip", whisperIp);
+
+        const whisperPort = document.getElementById("whisper_server_port").value.trim();
+        if (whisperPort !== "") formData.append("whisper_server_port", whisperPort);
+
+        // ★追加: Piper
+        const piperIp = document.getElementById("piper_tts_ip").value.trim();
+        if (piperIp !== "") formData.append("piper_tts_ip", piperIp);
+
+        const piperPort = document.getElementById("piper_tts_port").value.trim();
+        if (piperPort !== "") formData.append("piper_tts_port", piperPort);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/model_ver_set");
+        xhr.onload = function () {
+          if (xhr.status === 200) alert("設定を保存しました！");
+          else alert("設定の送信に失敗しました。");
+        };
+        xhr.send(formData);
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        await loadCurrent();
+        await fetchModelList(); // 初回だけ自動取得
+        document.getElementById("fetch_models_btn")?.addEventListener("click", fetchModelList);
+
+        const status = document.getElementById("models_status");
+        const markDirty = () => {
+          if (status) status.textContent = "設定を変更しました。必要なら「モデル一覧を取得」を押してください。\n" + expectedModelsUrl();
+        };
+        document.getElementById("model_ver")?.addEventListener("change", markDirty);
+        document.getElementById("llm_server_ip")?.addEventListener("input", markDirty);
+        document.getElementById("llm_server_port")?.addEventListener("input", markDirty);
+        document.getElementById("reset_port")?.addEventListener("change", () => {
+          if (document.getElementById("reset_port").checked) document.getElementById("llm_server_port").value = "";
+          markDirty();
+        });
+      });
+    </script>
+  </body>
+</html>
