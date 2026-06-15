@@ -1,0 +1,26 @@
+Arduino ESP32 Core Notice
+=========================
+
+StackChan Minimal firmware is currently built with PlatformIO using:
+
+    platform = espressif32@6.7.0
+    framework = arduino
+
+This means the firmware build uses Arduino ESP32 Core.
+
+Arduino ESP32 Core is developed by Espressif Systems and contributors.
+Repository:
+
+    https://github.com/espressif/arduino-esp32
+
+License:
+
+    GNU Lesser General Public License v2.1 or later / LGPL-2.1-or-later
+
+A copy of the GNU Lesser General Public License v2.1 is provided in this directory as:
+
+    LGPL-2.1.txt
+
+StackChan Minimal application source code is licensed separately under the Apache License 2.0.
+This notice does not relicense Arduino ESP32 Core, ESP-IDF, or any other third-party component.
+Please refer to each upstream project for the exact license terms and copyright notices.
